@@ -17,6 +17,10 @@ export type LibraryItemInput = Pick<
   'title' | 'author' | 'type' | 'status'
 >
 
+export interface CreateLibraryItemWithFileInput extends LibraryItemInput {
+  file: File
+}
+
 export interface Page<T> {
   content: T[]
   totalElements: number

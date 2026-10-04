@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useOutletContext, useSearchParams } from 'react-router-dom'
 import {
-  createLibraryItem,
   deleteLibraryItem,
   getItemsByStatus,
   getItemsByType,
   getLibraryItems,
   searchItemsByTitle,
   updateLibraryItem,
+  uploadPdf,
 } from '../api/libraryApi'
 import type { LibrarySort } from '../api/libraryApi'
 import Button from '../components/common/Button'
@@ -20,7 +20,8 @@ import type { StatusFilter, TypeFilter } from '../components/library/LibraryFilt
 import LibraryItemModal from '../components/library/LibraryItemModal'
 import LibraryTable from '../components/library/LibraryTable'
 import Pagination from '../components/library/Pagination'
-import type { LibraryItem, LibraryItemInput } from '../types/library'
+import type { DriveOutletContext } from '../components/layout/AppLayout'
+import type { CreateLibraryItemWithFileInput, LibraryItem, LibraryItemInput } from '../types/library'
 
 const pageSize = 7
 
@@ -31,6 +32,7 @@ interface LibraryResult {
 }
 
 export default function Library() {
+  const { driveStatus, driveLoading, driveError } = useOutletContext<DriveOutletContext>()
   const [searchParams, setSearchParams] = useSearchParams()
   const titleInput = searchParams.get('title') ?? ''
   const addOpen = searchParams.get('add') === '1'
@@ -47,6 +49,7 @@ export default function Library() {
   const [deletingItem, setDeletingItem] = useState<LibraryItem | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   function beginReload() {
     setLoading(true)
@@ -117,6 +120,7 @@ export default function Library() {
 
   function openAdd() {
     setEditingItem(null)
+    setSuccessMessage(null)
     const next = new URLSearchParams(searchParams)
     next.set('add', '1')
     setSearchParams(next)
@@ -129,13 +133,23 @@ export default function Library() {
     setSearchParams(next, { replace: true })
   }
 
-  async function saveItem(data: LibraryItemInput) {
-    if (editingItem) await updateLibraryItem(editingItem.id, data)
-    else await createLibraryItem(data)
+  function finishSave(message: string) {
     closeItemModal()
+    setSuccessMessage(message)
     beginReload()
     setPage(0)
     setRefreshKey((value) => value + 1)
+  }
+
+  async function createItem(data: CreateLibraryItemWithFileInput) {
+    await uploadPdf(data)
+    finishSave('Item added and PDF uploaded to Google Drive.')
+  }
+
+  async function updateItem(data: LibraryItemInput) {
+    if (!editingItem) throw new Error('No item is selected for editing.')
+    await updateLibraryItem(editingItem.id, data)
+    finishSave('Item details updated.')
   }
 
   async function confirmDelete() {
@@ -158,6 +172,7 @@ export default function Library() {
   return (
     <div>
       <PageHeader eyebrow="Vault Index" title="My Library" subtitle="Browse and organize your books, PDFs, papers, and notes." />
+      {successMessage && <p role="status" className="mb-4 rounded-xl bg-badge-completed/40 px-4 py-3 text-sm">{successMessage}</p>}
       <LibraryFilters
         title={titleInput}
         type={type}
@@ -176,12 +191,21 @@ export default function Library() {
         <EmptyState title="No library items found" description="Try another title or filter, or add an item to your library." action={<Button variant="primary" onClick={openAdd}>Add Item</Button>} />
       ) : (
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <LibraryTable items={result.items} onEdit={setEditingItem} onDelete={(item) => { setDeleteError(null); setDeletingItem(item) }} />
+          <LibraryTable items={result.items} onEdit={(item) => { setSuccessMessage(null); setEditingItem(item) }} onDelete={(item) => { setDeleteError(null); setDeletingItem(item) }} />
           <Pagination page={page} totalPages={result.totalPages} totalElements={result.totalElements} pageSize={pageSize} onChange={(value) => { beginReload(); setPage(value) }} />
         </div>
       )}
       {(addOpen || editingItem) && (
-        <LibraryItemModal key={editingItem?.id ?? 'new'} item={editingItem ?? undefined} onClose={closeItemModal} onSave={saveItem} />
+        <LibraryItemModal
+          key={editingItem?.id ?? 'new'}
+          item={editingItem ?? undefined}
+          onClose={closeItemModal}
+          onCreate={createItem}
+          onUpdate={updateItem}
+          driveConnected={driveStatus?.connected ?? null}
+          driveLoading={driveLoading}
+          driveError={driveError}
+        />
       )}
       {deletingItem && (
         <Modal title="Delete library item?" subtitle={deletingItem.title} onClose={() => setDeletingItem(null)}>

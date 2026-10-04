@@ -92,7 +92,7 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <Link to="/library?add=1" className="flex items-center gap-3 rounded-xl bg-pale p-3 hover:bg-pale-strong">
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white"><Icon name="bookmark_add" /></span>
-                    <span><strong className="block text-sm">Add Library Item</strong><span className="text-xs text-muted">Add a book, paper, PDF or note</span></span>
+                    <span><strong className="block text-sm">Add Library Item</strong><span className="text-xs text-muted">Add any content type with a PDF</span></span>
                   </Link>
                   <Link to="/upload" className="flex items-center gap-3 rounded-xl bg-pale p-3 hover:bg-pale-strong">
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white"><Icon name="cloud_upload" /></span>

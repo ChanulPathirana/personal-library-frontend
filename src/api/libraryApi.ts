@@ -1,5 +1,6 @@
 import { apiRequest } from './client'
 import type {
+  CreateLibraryItemWithFileInput,
   ItemType,
   LibraryItem,
   LibraryItemInput,
@@ -57,12 +58,7 @@ export function searchItemsByTitle(title: string): Promise<LibraryItem[]> {
   return apiRequest(`${libraryPath}/title/${encodeURIComponent(title)}`)
 }
 
-export interface PdfUploadInput extends LibraryItemInput {
-  file: File
-  type: 'PDF'
-}
-
-export function uploadPdf(data: PdfUploadInput): Promise<LibraryItem> {
+export function uploadPdf(data: CreateLibraryItemWithFileInput): Promise<LibraryItem> {
   const formData = new FormData()
   formData.append('title', data.title)
   formData.append('author', data.author)

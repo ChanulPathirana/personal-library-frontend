@@ -21,7 +21,7 @@ export default function UploadDropzone({ file, onFileChange, disabled = false }:
         <p className="mt-1 text-sm text-muted">or <label htmlFor="pdf-file" className="cursor-pointer font-medium text-accent hover:underline">browse from your computer</label></p>
         <p className="mx-auto mt-3 w-fit rounded-full bg-white px-3 py-1 text-xs text-muted">PDF files only</p>
       </div>
-      <input id="pdf-file" type="file" accept=".pdf,application/pdf" disabled={disabled} onChange={(event) => {
+      <input id="pdf-file" type="file" accept="application/pdf" disabled={disabled} onChange={(event) => {
         const next = event.currentTarget.files?.[0] ?? null
         event.currentTarget.value = ''
         onFileChange(next)

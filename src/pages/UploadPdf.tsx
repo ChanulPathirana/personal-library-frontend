@@ -7,7 +7,8 @@ import Icon from '../components/common/Icon'
 import PageHeader from '../components/common/PageHeader'
 import UploadDropzone from '../components/library/UploadDropzone'
 import type { DriveOutletContext } from '../components/layout/AppLayout'
-import type { LibraryItem, ReadingStatus } from '../types/library'
+import type { ItemType, LibraryItem, ReadingStatus } from '../types/library'
+import { isPdfFile } from '../utils/pdf'
 
 const fieldClass = 'mt-1.5 h-10 w-full rounded-xl bg-pale px-3 text-sm outline-none focus:ring-2 focus:ring-accent/30'
 
@@ -16,6 +17,7 @@ export default function UploadPdf() {
   const [file, setFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
+  const [type, setType] = useState<ItemType>('PDF')
   const [status, setStatus] = useState<ReadingStatus>('TO_READ')
   const [fileError, setFileError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -25,7 +27,7 @@ export default function UploadPdf() {
   function selectFile(next: File | null) {
     setUploaded(null)
     setFileError(null)
-    if (next && next.type !== 'application/pdf' && !next.name.toLowerCase().endsWith('.pdf')) {
+    if (next && !isPdfFile(next)) {
       setFile(null)
       setFileError('Choose a PDF file.')
       return
@@ -43,6 +45,10 @@ export default function UploadPdf() {
       setError('Title and author are required.')
       return
     }
+    if (!type || !status) {
+      setError('Choose a content type and reading status.')
+      return
+    }
     if (!driveStatus?.connected) {
       setError('Connect Google Drive before uploading a PDF.')
       return
@@ -54,12 +60,16 @@ export default function UploadPdf() {
       const item = await uploadPdf({
         title: title.trim(),
         author: author.trim(),
-        type: 'PDF',
+        type,
         status,
         file,
       })
       setUploaded(item)
       setFile(null)
+      setTitle('')
+      setAuthor('')
+      setType('PDF')
+      setStatus('TO_READ')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not upload the PDF.')
     } finally {
@@ -69,7 +79,7 @@ export default function UploadPdf() {
 
   return (
     <div className="mx-auto max-w-[740px]">
-      <PageHeader eyebrow="Storage Engine / Ingestion Pipeline" title="Upload Document" subtitle="Store a PDF in Google Drive and add it to your personal library." />
+      <PageHeader eyebrow="Storage Engine / Ingestion Pipeline" title="Upload Document" subtitle="Add a book, paper, note, or document by uploading its PDF to Google Drive." />
       <UploadDropzone file={file} onFileChange={selectFile} disabled={busy} />
       {fileError && <p role="alert" className="mt-2 text-sm text-danger">{fileError}</p>}
       <form onSubmit={(event) => { void submit(event) }} className="mt-7 rounded-2xl bg-white p-5 shadow-sm">
@@ -94,10 +104,16 @@ export default function UploadPdf() {
               <option value="COMPLETED">Completed</option>
             </select>
           </label>
-          <div className="sm:col-span-2">
-            <p className="text-xs font-medium">Format Type</p>
-            <div className="mt-1.5 flex h-10 items-center gap-2 rounded-xl bg-pale px-3 text-sm"><span className="rounded-full bg-badge-toread px-2 py-0.5 text-xs">PDF</span> Portable Document <Icon name="lock" className="ml-auto text-base text-muted" /></div>
-          </div>
+          <label className="block text-xs font-medium sm:col-span-2">
+            Content Type
+            <select required value={type} onChange={(event) => setType(event.target.value as ItemType)} className={fieldClass}>
+              <option value="BOOK">Book</option>
+              <option value="PAPER">Paper</option>
+              <option value="NOTE">Note</option>
+              <option value="PDF">PDF / Document</option>
+            </select>
+            <span className="mt-1.5 block text-xs font-normal text-muted">The file is always a PDF; content type describes what it contains.</span>
+          </label>
         </div>
         <div className="mt-5 rounded-xl bg-pale p-3 text-sm">
           <div className="flex items-center gap-2">

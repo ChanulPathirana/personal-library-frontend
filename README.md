@@ -15,8 +15,9 @@ The backend must allow http://localhost:5173 through CORS for local development 
 ## Supported UI
 
 - Dashboard totals and library items from backend data.
-- Library CRUD, title search, type/status filtering, sorting, and pagination.
-- PDF upload with title, author, type, status, and file multipart fields.
+- Library editing/deletion, title search, type/status filtering, sorting, and pagination.
+- All visible item creation paths upload a required PDF with title, author, content type, and reading status through the multipart endpoint. BOOK, PAPER, NOTE, and PDF all use a PDF file.
+- Existing item edits update metadata only; they do not re-upload or replace the Google Drive file.
 - Google Drive connected/disconnected status, connect, disconnect, and account change by disconnecting then reconnecting.
 
 The API response for Drive status currently contains only connected. The UI intentionally omits account email, storage usage, sync history, and other unsupported mock data. Title search uses /api/library/title/{title}. When filtering or searching, pagination and any additional filters apply to the returned matches in the browser; the default unfiltered list uses Spring pageable parameters.
