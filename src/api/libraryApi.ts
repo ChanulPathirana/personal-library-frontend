@@ -9,8 +9,15 @@ import type {
 
 const libraryPath = '/api/library'
 
-export function getLibraryItems(page: number, size: number): Promise<Page<LibraryItem>> {
+export type LibrarySort = 'title,asc' | 'title,desc' | 'author,asc' | 'author,desc'
+
+export function getLibraryItems(
+  page: number,
+  size: number,
+  sort: LibrarySort = 'title,asc',
+): Promise<Page<LibraryItem>> {
   const query = new URLSearchParams({ page: String(page), size: String(size) })
+  query.set('sort', sort)
   return apiRequest(`${libraryPath}?${query}`)
 }
 
@@ -47,13 +54,21 @@ export function getItemsByType(type: ItemType): Promise<LibraryItem[]> {
 }
 
 export function searchItemsByTitle(title: string): Promise<LibraryItem[]> {
-  const query = new URLSearchParams({ title })
-  return apiRequest(`${libraryPath}/search?${query}`)
+  return apiRequest(`${libraryPath}/title/${encodeURIComponent(title)}`)
 }
 
-export function uploadPdf(file: File): Promise<LibraryItem> {
+export interface PdfUploadInput extends LibraryItemInput {
+  file: File
+  type: 'PDF'
+}
+
+export function uploadPdf(data: PdfUploadInput): Promise<LibraryItem> {
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('title', data.title)
+  formData.append('author', data.author)
+  formData.append('type', data.type)
+  formData.append('status', data.status)
+  formData.append('file', data.file)
   return apiRequest(`${libraryPath}/upload`, {
     method: 'POST',
     body: formData,
